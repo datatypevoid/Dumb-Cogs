@@ -14,10 +14,10 @@ default_greeting = "Welcome {0.name} to {1.name}!"
 default_settings = {"GREETING": [default_greeting], "ON": False,
                     "CHANNEL": None, "WHISPER": False,
                     "BOTS_MSG": None, "BOTS_ROLE": None}
-settings_path = "data/welcome/settings.json"
+settings_path = "data/greeting/settings.json"
 
 
-class Welcome:
+class Greeting:
     """Welcomes new members to the server in the default channel"""
 
     def __init__(self, bot):
@@ -26,7 +26,7 @@ class Welcome:
 
     @commands.group(pass_context=True, no_pm=True)
     @checks.admin_or_permissions(manage_server=True)
-    async def welcomeset(self, ctx):
+    async def greetingset(self, ctx):
         """Sets welcome module settings"""
         server = ctx.message.server
         if server.id not in self.settings:
@@ -45,8 +45,8 @@ class Welcome:
             msg += "```"
             await self.bot.say(msg)
 
-    @welcomeset.group(pass_context=True, name="msg")
-    async def welcomeset_msg(self, ctx):
+    @greetingset.group(pass_context=True, name="msg")
+    async def greetingset_msg(self, ctx):
         """Manage welcome messages
         """
         if ctx.invoked_subcommand is None or \
@@ -54,8 +54,8 @@ class Welcome:
             await send_cmd_help(ctx)
             return
 
-    @welcomeset_msg.command(pass_context=True, name="add", no_pm=True)
-    async def welcomeset_msg_add(self, ctx, *, format_msg):
+    @greetingset_msg.command(pass_context=True, name="add", no_pm=True)
+    async def greetingset_msg_add(self, ctx, *, format_msg):
         """Adds a welcome message format for the server to be chosen at random
 
         {0} is user
@@ -73,8 +73,8 @@ class Welcome:
         await self.bot.say("Welcome message added for the server.")
         await self.send_testing_msg(ctx, msg=format_msg)
 
-    @welcomeset_msg.command(pass_context=True, name="del", no_pm=True)
-    async def welcomeset_msg_del(self, ctx):
+    @greetingset_msg.command(pass_context=True, name="del", no_pm=True)
+    async def greetingset_msg_del(self, ctx):
         """Removes a welcome message from the random message list
         """
         server = ctx.message.server
@@ -96,8 +96,8 @@ class Welcome:
         dataIO.save_json(settings_path, self.settings)
         await self.bot.say("**This message was deleted:**\n{}".format(choice))
 
-    @welcomeset_msg.command(pass_context=True, name="list", no_pm=True)
-    async def welcomeset_msg_list(self, ctx):
+    @greetingset_msg.command(pass_context=True, name="list", no_pm=True)
+    async def greetingset_msg_list(self, ctx):
         """Lists the welcome messages of this server
         """
         server = ctx.message.server
@@ -107,7 +107,7 @@ class Welcome:
         for page in pagify(msg, ['\n', ' '], shorten_by=20):
             await self.bot.say("```\n{}\n```".format(page))
 
-    @welcomeset.command(pass_context=True)
+    @greetingset.command(pass_context=True)
     async def toggle(self, ctx):
         """Turns on/off welcoming new users to the server"""
         server = ctx.message.server
@@ -119,7 +119,7 @@ class Welcome:
             await self.bot.say("I will no longer welcome new users.")
         dataIO.save_json(settings_path, self.settings)
 
-    @welcomeset.command(pass_context=True)
+    @greetingset.command(pass_context=True)
     async def channel(self, ctx, channel : discord.Channel=None):
         """Sets the channel to send the welcome message
 
@@ -139,16 +139,16 @@ class Welcome:
                                     "messages to {0.mention}".format(channel))
         await self.send_testing_msg(ctx)
 
-    @welcomeset.group(pass_context=True, name="bot", no_pm=True)
-    async def welcomeset_bot(self, ctx):
+    @greetingset.group(pass_context=True, name="bot", no_pm=True)
+    async def greetingset_bot(self, ctx):
         """Special welcome for bots"""
         if ctx.invoked_subcommand is None or \
                 isinstance(ctx.invoked_subcommand, commands.Group):
             await send_cmd_help(ctx)
             return
 
-    @welcomeset_bot.command(pass_context=True, name="msg", no_pm=True)
-    async def welcomeset_bot_msg(self, ctx, *, format_msg=None):
+    @greetingset_bot.command(pass_context=True, name="msg", no_pm=True)
+    async def greetingset_bot_msg(self, ctx, *, format_msg=None):
         """Set the welcome msg for bots.
 
         Leave blank to reset to regular user welcome"""
@@ -162,8 +162,8 @@ class Welcome:
             await self.send_testing_msg(ctx, bot=True)
 
     # TODO: Check if have permissions
-    @welcomeset_bot.command(pass_context=True, name="role", no_pm=True)
-    async def welcomeset_bot_role(self, ctx, role: discord.Role=None):
+    @greetingset_bot.command(pass_context=True, name="role", no_pm=True)
+    async def greetingset_bot_role(self, ctx, role: discord.Role=None):
         """Set the role to put bots in when they join.
 
         Leave blank to not give them a role."""
@@ -173,7 +173,7 @@ class Welcome:
         await self.bot.say("Bots that join this server will "
                            "now be put into the {} role".format(role.name))
 
-    @welcomeset.command(pass_context=True)
+    @greetingset.command(pass_context=True)
     async def whisper(self, ctx, choice: str=None):
         """Sets whether or not a DM is sent to the new user
 
@@ -346,6 +346,6 @@ def check_files():
 def setup(bot):
     check_folders()
     check_files()
-    n = Welcome(bot)
+    n = Greeting(bot)
     bot.add_listener(n.member_join, "on_member_join")
     bot.add_cog(n)
