@@ -10,7 +10,7 @@ import asyncio
 from random import choice as rand_choice
 
 
-default_greeting = "Welcome {0.name} to {1.name}!"
+default_greeting = "Greet {0.name} to {1.name}!"
 default_settings = {"GREETING": [default_greeting], "ON": False,
                     "CHANNEL": None, "WHISPER": False,
                     "BOTS_MSG": None, "BOTS_ROLE": None}
@@ -18,7 +18,7 @@ settings_path = "data/greeting/settings.json"
 
 
 class Greeting:
-    """Welcomes new members to the server in the default channel"""
+    """Greets new members to the server in the default channel"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -27,7 +27,7 @@ class Greeting:
     @commands.group(pass_context=True, no_pm=True)
     @checks.admin_or_permissions(manage_server=True)
     async def greetingset(self, ctx):
-        """Sets welcome module settings"""
+        """Sets greeting module settings"""
         server = ctx.message.server
         if server.id not in self.settings:
             self.settings[server.id] = deepcopy(default_settings)
@@ -37,7 +37,7 @@ class Greeting:
             await send_cmd_help(ctx)
             msg = "```"
             msg += "Random GREETING: {}\n".format(rand_choice(self.settings[server.id]["GREETING"]))
-            msg += "CHANNEL: #{}\n".format(self.get_welcome_channel(server))
+            msg += "CHANNEL: #{}\n".format(self.get_greeting_channel(server))
             msg += "ON: {}\n".format(self.settings[server.id]["ON"])
             msg += "WHISPER: {}\n".format(self.settings[server.id]["WHISPER"])
             msg += "BOTS_MSG: {}\n".format(self.settings[server.id]["BOTS_MSG"])
@@ -47,7 +47,7 @@ class Greeting:
 
     @greetingset.group(pass_context=True, name="msg")
     async def greetingset_msg(self, ctx):
-        """Manage welcome messages
+        """Manage greeting messages
         """
         if ctx.invoked_subcommand is None or \
                 isinstance(ctx.invoked_subcommand, commands.Group):
@@ -56,7 +56,7 @@ class Greeting:
 
     @greetingset_msg.command(pass_context=True, name="add", no_pm=True)
     async def greetingset_msg_add(self, ctx, *, format_msg):
-        """Adds a welcome message format for the server to be chosen at random
+        """Adds a greeting message format for the server to be chosen at random
 
         {0} is user
         {1} is server
@@ -70,16 +70,16 @@ class Greeting:
         server = ctx.message.server
         self.settings[server.id]["GREETING"].append(format_msg)
         dataIO.save_json(settings_path, self.settings)
-        await self.bot.say("Welcome message added for the server.")
+        await self.bot.say("Greeting message added for the server.")
         await self.send_testing_msg(ctx, msg=format_msg)
 
     @greetingset_msg.command(pass_context=True, name="del", no_pm=True)
     async def greetingset_msg_del(self, ctx):
-        """Removes a welcome message from the random message list
+        """Removes a greeting message from the random message list
         """
         server = ctx.message.server
         author = ctx.message.author
-        msg = 'Choose a welcome message to delete:\n\n'
+        msg = 'Choose a greeting message to delete:\n\n'
         for c, m in enumerate(self.settings[server.id]["GREETING"]):
             msg += "  {}. {}\n".format(c, m)
         for page in pagify(msg, ['\n', ' '], shorten_by=20):
@@ -98,10 +98,10 @@ class Greeting:
 
     @greetingset_msg.command(pass_context=True, name="list", no_pm=True)
     async def greetingset_msg_list(self, ctx):
-        """Lists the welcome messages of this server
+        """Lists the greeting messages of this server
         """
         server = ctx.message.server
-        msg = 'Welcome messages:\n\n'
+        msg = 'Greeting messages:\n\n'
         for c, m in enumerate(self.settings[server.id]["GREETING"]):
             msg += "  {}. {}\n".format(c, m)
         for page in pagify(msg, ['\n', ' '], shorten_by=20):
@@ -113,15 +113,15 @@ class Greeting:
         server = ctx.message.server
         self.settings[server.id]["ON"] = not self.settings[server.id]["ON"]
         if self.settings[server.id]["ON"]:
-            await self.bot.say("I will now welcome new users to the server.")
+            await self.bot.say("I will now greet new users to the server.")
             await self.send_testing_msg(ctx)
         else:
-            await self.bot.say("I will no longer welcome new users.")
+            await self.bot.say("I will no longer greet new users.")
         dataIO.save_json(settings_path, self.settings)
 
     @greetingset.command(pass_context=True)
     async def channel(self, ctx, channel : discord.Channel=None):
-        """Sets the channel to send the welcome message
+        """Sets the channel to send the greeting message
 
         If channel isn't specified, the server's default channel will be used"""
         server = ctx.message.server
@@ -134,14 +134,14 @@ class Greeting:
             return
         self.settings[server.id]["CHANNEL"] = channel.id
         dataIO.save_json(settings_path, self.settings)
-        channel = self.get_welcome_channel(server)
-        await self.bot.send_message(channel, "I will now send welcome "
+        channel = self.get_greeting_channel(server)
+        await self.bot.send_message(channel, "I will now send greeting "
                                     "messages to {0.mention}".format(channel))
         await self.send_testing_msg(ctx)
 
     @greetingset.group(pass_context=True, name="bot", no_pm=True)
     async def greetingset_bot(self, ctx):
-        """Special welcome for bots"""
+        """Special greeting for bots"""
         if ctx.invoked_subcommand is None or \
                 isinstance(ctx.invoked_subcommand, commands.Group):
             await send_cmd_help(ctx)
@@ -149,16 +149,16 @@ class Greeting:
 
     @greetingset_bot.command(pass_context=True, name="msg", no_pm=True)
     async def greetingset_bot_msg(self, ctx, *, format_msg=None):
-        """Set the welcome msg for bots.
+        """Set the greeting msg for bots.
 
-        Leave blank to reset to regular user welcome"""
+        Leave blank to reset to regular user greeting"""
         server = ctx.message.server
         self.settings[server.id]["BOTS_MSG"] = format_msg
         dataIO.save_json(settings_path, self.settings)
         if format_msg is None:
-            await self.bot.say("Bot message reset. Bots will now be welcomed as regular users.")
+            await self.bot.say("Bot message reset. Bots will now be greeted as regular users.")
         else:
-            await self.bot.say("Bot welcome message set for the server.")
+            await self.bot.say("Bot greeting message set for the server.")
             await self.send_testing_msg(ctx, bot=True)
 
     # TODO: Check if have permissions
@@ -179,7 +179,7 @@ class Greeting:
 
         Options:
             off - turns off DMs to users
-            only - only send a DM to the user, don't send a welcome to the channel
+            only - only send a DM to the user, don't send a greeting to the channel
             both - send a message to both the user and the channel
 
         If Option isn't specified, toggles between 'off' and 'only'
@@ -194,16 +194,16 @@ class Greeting:
         else:
             self.settings[server.id]["WHISPER"] = options[choice.lower()]
         dataIO.save_json(settings_path, self.settings)
-        channel = self.get_welcome_channel(server)
+        channel = self.get_greeting_channel(server)
         if not self.settings[server.id]["WHISPER"]:
             await self.bot.say("I will no longer send DMs to new users")
         elif self.settings[server.id]["WHISPER"] == "BOTH":
-            await self.bot.send_message(channel, "I will now send welcome "
+            await self.bot.send_message(channel, "I will now send greeting "
                                         "messages to {0.mention} as well as to "
                                         "the new user in a DM".format(channel))
         else:
             await self.bot.send_message(channel, "I will now only send "
-                                        "welcome messages to the new user "
+                                        "greeting messages to the new user "
                                         "as a DM".format(channel))
         await self.send_testing_msg(ctx)
 
@@ -222,25 +222,25 @@ class Greeting:
             return
 
         only_whisper = self.settings[server.id]["WHISPER"] is True
-        bot_welcome = member.bot and self.settings[server.id]["BOTS_MSG"]
+        bot_greeting = member.bot and self.settings[server.id]["BOTS_MSG"]
         bot_role = member.bot and self.settings[server.id]["BOTS_ROLE"]
-        msg = bot_welcome or rand_choice(self.settings[server.id]["GREETING"])
+        msg = bot_greeting or rand_choice(self.settings[server.id]["GREETING"])
 
         # whisper the user if needed
         if not member.bot and self.settings[server.id]["WHISPER"]:
             try:
                 await self.bot.send_message(member, msg.format(member, server))
             except:
-                print("welcome.py: unable to whisper {}. Probably "
+                print("greeting.py: unable to whisper {}. Probably "
                       "doesn't want to be PM'd".format(member))
-        # grab the welcome channel
-        channel = self.get_welcome_channel(server)
+        # grab the greeting channel
+        channel = self.get_greeting_channel(server)
         if channel is None:  # complain even if only whisper
-            print('welcome.py: Channel not found. It was most '
+            print('greeting.py: Channel not found. It was most '
                   'likely deleted. User joined: {}'.format(member.name))
             return
         # we can stop here
-        if only_whisper and not bot_welcome:
+        if only_whisper and not bot_greeting:
             return
         if not self.speak_permissions(server):
             print("Permissions Error. User that joined: "
@@ -255,35 +255,35 @@ class Greeting:
                 role = discord.utils.get(server.roles, name=bot_role)
                 await self.bot.add_roles(member, role)
             except:
-                print('welcome.py: unable to add {} role to {}. '
+                print('greeting.py: unable to add {} role to {}. '
                       'Role was deleted, network error, or lacking '
                       'permissions. Trying again in 5 seconds.'
                       .format(bot_role, member))
                 failed_to_add_role = True
             else:
-                print('welcome.py: added {} role to '
+                print('greeting.py: added {} role to '
                       'bot, {}'.format(role, member))
-        # finally, welcome them
+        # finally, greet them
         await self.bot.send_message(channel, msg.format(member, server))
         if failed_to_add_role:
             await asyncio.sleep(5)
             try:
                 await self.bot.add_roles(member, role)
             except:
-                print('welcome.py: Still unable to add {} role to {}.'
+                print('greeting.py: Still unable to add {} role to {}.'
                       .format(bot_role, member))
             else:
-                print('welcome.py: added {} role to '
+                print('greeting.py: added {} role to '
                       'bot, {}'.format(role, member))
 
-    def get_welcome_channel(self, server):
+    def get_greeting_channel(self, server):
         try:
             return server.get_channel(self.settings[server.id]["CHANNEL"])
         except:
             return None
 
     def speak_permissions(self, server):
-        channel = self.get_welcome_channel(server)
+        channel = self.get_greeting_channel(server)
         if channel is None:
             return False
         return server.get_member(self.bot.user.id
@@ -291,7 +291,7 @@ class Greeting:
 
     async def send_testing_msg(self, ctx, bot=False, msg=None):
         server = ctx.message.server
-        channel = self.get_welcome_channel(server)
+        channel = self.get_greeting_channel(server)
         rand_msg = msg or rand_choice(self.settings[server.id]["GREETING"])
         if channel is None:
             await self.bot.send_message(ctx.message.channel,
@@ -317,15 +317,15 @@ class Greeting:
 
 
 def check_folders():
-    if not os.path.exists("data/welcome"):
-        print("Creating data/welcome folder...")
-        os.makedirs("data/welcome")
+    if not os.path.exists("data/greeting"):
+        print("Creating data/greeting folder...")
+        os.makedirs("data/greeting")
 
 
 def check_files():
     f = settings_path
     if not dataIO.is_valid_json(f):
-        print("Creating welcome settings.json...")
+        print("Creating greeting settings.json...")
         dataIO.save_json(f, {})
     else:  # consistency check
         current = dataIO.load_json(f)
@@ -335,7 +335,7 @@ def check_files():
                     if key not in v.keys():
                         current[k][key] = deepcopy(default_settings)[key]
                         print("Adding " + str(key) +
-                              " field to welcome settings.json")
+                              " field to greeting settings.json")
         # upgrade. Before GREETING was 1 string
         for server in current.values():
             if isinstance(server["GREETING"], str):
